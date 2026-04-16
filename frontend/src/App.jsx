@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 
+import API from './api';
 import Dashboard from './pages/Dashboard';
 import FileLauncher from './pages/FileLauncher';
 import Login from './pages/Login';
@@ -99,6 +100,38 @@ export default function App() {
   }, [recentFilesStorageKey, session]);
 
   useEffect(() => {
+    if (!session) {
+      return;
+    }
+
+    let isMounted = true;
+
+    async function loadWorkbooks() {
+      try {
+        const workbooks = await API.get('/workbooks');
+
+        if (!isMounted) {
+          return;
+        }
+
+        setRecentFiles(Array.isArray(workbooks) ? workbooks : []);
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        console.error(error);
+      }
+    }
+
+    loadWorkbooks();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [session]);
+
+  useEffect(() => {
     if (!recentFilesStorageKey) {
       return;
     }
@@ -110,21 +143,31 @@ export default function App() {
     setActiveFile(file);
   }
 
-  function saveRecentFile(file) {
-    setActiveFile((current) => (current?.id === file.id ? current : file));
+  async function saveRecentFile(file) {
+    setActiveFile(file);
 
     if (isWorkbookEmpty(file)) {
       setRecentFiles((current) => current.filter((entry) => entry.id !== file.id));
-      return;
+      return file;
     }
 
+    const savedFile = await API.put(`/workbooks/${encodeURIComponent(file.id)}`, file);
+    setActiveFile(savedFile);
     setRecentFiles((current) => {
-      const next = [file, ...current.filter((entry) => entry.id !== file.id)];
+      const next = [savedFile, ...current.filter((entry) => entry.id !== savedFile.id)];
       return next.slice(0, 8);
     });
+
+    return savedFile;
   }
 
-  function deleteRecentFile(fileId) {
+  async function deleteRecentFile(fileId) {
+    try {
+      await API.delete(`/workbooks/${encodeURIComponent(fileId)}`);
+    } catch (error) {
+      console.error(error);
+    }
+
     setRecentFiles((current) => current.filter((entry) => entry.id !== fileId));
 
     if (activeFile?.id === fileId) {

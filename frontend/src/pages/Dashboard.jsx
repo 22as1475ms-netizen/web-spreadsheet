@@ -1068,7 +1068,7 @@ export default function Dashboard({ activeFile, onBackToFiles, onSaveFile, sessi
     }
   }
 
-  function persistDraft(mode = 'manual', successMessage = '') {
+  async function persistDraft(mode = 'manual', successMessage = '') {
     clearSaveTimers();
 
     const { nextFile } = buildFileDraft(draftRef.current.sheets, {
@@ -1077,16 +1077,22 @@ export default function Dashboard({ activeFile, onBackToFiles, onSaveFile, sessi
     });
 
     setSaveState('saving');
-    onSaveFile(nextFile);
+    try {
+      await onSaveFile(nextFile);
+      setSaveState('saved');
+
+      if (mode === 'manual') {
+        notify(successMessage || 'Workbook saved.');
+      }
+    } catch (error) {
+      setSaveState('dirty');
+      notify(error.message || 'Unable to save workbook.', 'error');
+      return;
+    }
 
     saveFeedbackTimerRef.current = window.setTimeout(() => {
-      setSaveState('saved');
       saveFeedbackTimerRef.current = null;
     }, 320);
-
-    if (mode === 'manual') {
-      notify(successMessage || 'Workbook saved.');
-    }
   }
 
   function scheduleAutosave() {
@@ -1118,7 +1124,9 @@ export default function Dashboard({ activeFile, onBackToFiles, onSaveFile, sessi
       setSaveState('dirty');
     }
 
-    notify(nextMessage);
+    if (!options.forceSave) {
+      notify(nextMessage);
+    }
   }
 
   function updateActiveSheet(updater, nextMessage) {

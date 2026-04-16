@@ -6,7 +6,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 
 const authRoutes = require('./routes/auth.routes');
-const recordRoutes = require('./routes/record.routes');
+const workbookRoutes = require('./routes/workbook.routes');
 const errorMiddleware = require('./middleware/error.middleware');
 
 const app = express();
@@ -61,7 +61,7 @@ app.get('/test', (req, res) => {
 });
 
 app.use('/auth', authRoutes);
-app.use('/records', recordRoutes);
+app.use('/workbooks', workbookRoutes);
 app.use(errorMiddleware);
 
 module.exports = app;

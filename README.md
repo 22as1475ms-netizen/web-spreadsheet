@@ -26,11 +26,13 @@ Recommended `CLIENT_ORIGIN` value:
 2. In the SQL editor, run [`supabase/schema.sql`](./supabase/schema.sql).
 3. Copy the Supabase Postgres connection string into `DATABASE_URL`.
 4. Set `STORAGE_DRIVER=postgres`.
-5. Migrate any existing JSON seed data with:
+5. Migrate any existing JSON user seed data with:
 
 ```bash
 npm --prefix backend run migrate:json-to-postgres
 ```
+
+The actual spreadsheet system is stored in the `workbooks` table as workbook JSON payloads, so saved sheets, rows, merges, hidden columns, styling, and workbook metadata now map to the real editor instead of the old placeholder domain model.
 
 For local JSON-only development, keep:
 

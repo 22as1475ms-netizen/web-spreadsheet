@@ -4,7 +4,7 @@ const { Pool } = require('pg');
 
 const emptyDb = {
   users: [],
-  records: []
+  workbooks: []
 };
 
 let pool;
@@ -117,201 +117,114 @@ async function createUser(user) {
   return result.rows[0];
 }
 
-async function listRecordsByUserId(userId) {
+async function listWorkbooksByUserId(userId) {
   if (getStorageDriver() === 'json') {
     const db = await readJsonDb();
-    return db.records.filter((record) => record.userId === userId);
+    return db.workbooks
+      .filter((workbook) => workbook.userId === userId)
+      .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+      .map((workbook) => workbook.payload);
   }
 
   const result = await query(
     `
       select
         id,
-        user_id as "userId",
-        station_name as "stationName",
-        river,
-        municipality,
-        sampling_date as "samplingDate",
-        ph,
-        dissolved_oxygen as "dissolvedOxygen",
-        temperature,
-        status,
-        notes,
+        name,
+        payload,
+        source_label as "sourceLabel",
         created_at as "createdAt",
         updated_at as "updatedAt"
-      from water_quality_records
+      from workbooks
       where user_id = $1
       order by updated_at desc
     `,
     [userId]
   );
 
-  return result.rows;
+  return result.rows.map((row) => ({
+    ...row.payload,
+    id: row.id,
+    name: row.name,
+    sourceLabel: row.sourceLabel,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt
+  }));
 }
 
-async function createRecord(record) {
+async function upsertWorkbook(userId, workbook) {
+  const payload = {
+    ...workbook,
+    id: workbook.id
+  };
+
   if (getStorageDriver() === 'json') {
     const db = await readJsonDb();
-    db.records.push(record);
-    await writeJsonDb(db);
-    return record;
-  }
-
-  const result = await query(
-    `
-      insert into water_quality_records (
-        id,
-        user_id,
-        station_name,
-        river,
-        municipality,
-        sampling_date,
-        ph,
-        dissolved_oxygen,
-        temperature,
-        status,
-        notes,
-        created_at,
-        updated_at
-      )
-      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-      returning
-        id,
-        user_id as "userId",
-        station_name as "stationName",
-        river,
-        municipality,
-        sampling_date as "samplingDate",
-        ph,
-        dissolved_oxygen as "dissolvedOxygen",
-        temperature,
-        status,
-        notes,
-        created_at as "createdAt",
-        updated_at as "updatedAt"
-    `,
-    [
-      record.id,
-      record.userId,
-      record.stationName,
-      record.river,
-      record.municipality,
-      record.samplingDate,
-      record.ph,
-      record.dissolvedOxygen,
-      record.temperature,
-      record.status,
-      record.notes,
-      record.createdAt,
-      record.updatedAt
-    ]
-  );
-
-  return result.rows[0];
-}
-
-async function findRecordById(userId, recordId) {
-  if (getStorageDriver() === 'json') {
-    const db = await readJsonDb();
-    return db.records.find((entry) => entry.id === recordId && entry.userId === userId) || null;
-  }
-
-  const result = await query(
-    `
-      select
-        id,
-        user_id as "userId",
-        station_name as "stationName",
-        river,
-        municipality,
-        sampling_date as "samplingDate",
-        ph,
-        dissolved_oxygen as "dissolvedOxygen",
-        temperature,
-        status,
-        notes,
-        created_at as "createdAt",
-        updated_at as "updatedAt"
-      from water_quality_records
-      where id = $1 and user_id = $2
-      limit 1
-    `,
-    [recordId, userId]
-  );
-
-  return result.rows[0] || null;
-}
-
-async function updateRecord(record) {
-  if (getStorageDriver() === 'json') {
-    const db = await readJsonDb();
-    const index = db.records.findIndex((entry) => entry.id === record.id && entry.userId === record.userId);
+    const index = db.workbooks.findIndex((entry) => entry.id === workbook.id && entry.userId === userId);
+    const entry = {
+      id: workbook.id,
+      userId,
+      updatedAt: workbook.updatedAt,
+      payload
+    };
 
     if (index === -1) {
-      return null;
+      db.workbooks.push(entry);
+    } else {
+      db.workbooks[index] = entry;
     }
 
-    db.records[index] = record;
     await writeJsonDb(db);
-    return record;
+    return payload;
   }
 
   const result = await query(
     `
-      update water_quality_records
+      insert into workbooks (id, user_id, name, payload, source_label, created_at, updated_at)
+      values ($1, $2, $3, $4::jsonb, $5, $6, $7)
+      on conflict (id) do update
       set
-        station_name = $3,
-        river = $4,
-        municipality = $5,
-        sampling_date = $6,
-        ph = $7,
-        dissolved_oxygen = $8,
-        temperature = $9,
-        status = $10,
-        notes = $11,
-        updated_at = $12
-      where id = $1 and user_id = $2
+        name = excluded.name,
+        payload = excluded.payload,
+        source_label = excluded.source_label,
+        updated_at = excluded.updated_at
       returning
         id,
-        user_id as "userId",
-        station_name as "stationName",
-        river,
-        municipality,
-        sampling_date as "samplingDate",
-        ph,
-        dissolved_oxygen as "dissolvedOxygen",
-        temperature,
-        status,
-        notes,
+        name,
+        payload,
+        source_label as "sourceLabel",
         created_at as "createdAt",
         updated_at as "updatedAt"
     `,
     [
-      record.id,
-      record.userId,
-      record.stationName,
-      record.river,
-      record.municipality,
-      record.samplingDate,
-      record.ph,
-      record.dissolvedOxygen,
-      record.temperature,
-      record.status,
-      record.notes,
-      record.updatedAt
+      workbook.id,
+      userId,
+      workbook.name,
+      JSON.stringify(payload),
+      workbook.sourceLabel || 'Workbook Dashboard',
+      workbook.createdAt,
+      workbook.updatedAt
     ]
   );
 
-  return result.rows[0] || null;
+  const row = result.rows[0];
+  return {
+    ...row.payload,
+    id: row.id,
+    name: row.name,
+    sourceLabel: row.sourceLabel,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt
+  };
 }
 
-async function deleteRecord(userId, recordId) {
+async function deleteWorkbookById(userId, workbookId) {
   if (getStorageDriver() === 'json') {
     const db = await readJsonDb();
-    const initialLength = db.records.length;
-    db.records = db.records.filter((entry) => !(entry.id === recordId && entry.userId === userId));
+    const initialLength = db.workbooks.length;
+    db.workbooks = db.workbooks.filter((entry) => !(entry.id === workbookId && entry.userId === userId));
 
-    if (db.records.length === initialLength) {
+    if (db.workbooks.length === initialLength) {
       return false;
     }
 
@@ -321,22 +234,20 @@ async function deleteRecord(userId, recordId) {
 
   const result = await query(
     `
-      delete from water_quality_records
+      delete from workbooks
       where id = $1 and user_id = $2
     `,
-    [recordId, userId]
+    [workbookId, userId]
   );
 
   return result.rowCount > 0;
 }
 
 module.exports = {
-  createRecord,
   createUser,
-  deleteRecord,
-  findRecordById,
+  deleteWorkbookById,
   findUserByEmail,
   getStorageDriver,
-  listRecordsByUserId,
-  updateRecord
+  listWorkbooksByUserId,
+  upsertWorkbook
 };

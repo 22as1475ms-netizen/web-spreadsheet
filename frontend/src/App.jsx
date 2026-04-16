@@ -78,6 +78,11 @@ function isWorkbookEmpty(file) {
   });
 }
 
+function mergeRecentFiles(currentFiles, nextFile) {
+  const next = [nextFile, ...currentFiles.filter((entry) => entry.id !== nextFile.id)];
+  return next.slice(0, 8);
+}
+
 export default function App() {
   // Always start from the auth screen instead of restoring the last session on load.
   const [session, setSession] = useState(null);
@@ -143,6 +148,11 @@ export default function App() {
     setActiveFile(file);
   }
 
+  function openRecentFile(file) {
+    setActiveFile(file);
+    setRecentFiles((current) => mergeRecentFiles(current, file));
+  }
+
   async function saveRecentFile(file) {
     setActiveFile(file);
 
@@ -153,10 +163,7 @@ export default function App() {
 
     const savedFile = await API.put(`/workbooks/${encodeURIComponent(file.id)}`, file);
     setActiveFile(savedFile);
-    setRecentFiles((current) => {
-      const next = [savedFile, ...current.filter((entry) => entry.id !== savedFile.id)];
-      return next.slice(0, 8);
-    });
+    setRecentFiles((current) => mergeRecentFiles(current, savedFile));
 
     return savedFile;
   }
@@ -200,7 +207,7 @@ export default function App() {
             onDeleteRecent={deleteRecentFile}
             onImportFile={saveRecentFile}
             onLogout={handleLogout}
-            onOpenRecent={saveRecentFile}
+            onOpenRecent={openRecentFile}
           />
         )
       ) : (

@@ -1,6 +1,7 @@
 const fs = require('fs/promises');
 const path = require('path');
 const { Pool } = require('pg');
+const { createError } = require('../utils/validator');
 
 const emptyDb = {
   users: [],
@@ -176,6 +177,20 @@ async function upsertWorkbook(userId, workbook) {
 
     await writeJsonDb(db);
     return payload;
+  }
+
+  const ownerResult = await query(
+    `
+      select user_id as "userId"
+      from workbooks
+      where id = $1
+      limit 1
+    `,
+    [workbook.id]
+  );
+
+  if (ownerResult.rows[0] && ownerResult.rows[0].userId !== userId) {
+    throw createError(403, 'You do not have permission to overwrite this workbook.');
   }
 
   const result = await query(

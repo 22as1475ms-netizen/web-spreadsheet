@@ -1,0 +1,12 @@
+{
+  "users": [
+    {
+      "id": "1656936b-f686-43e9-b8bb-594e6c0400a0",
+      "name": "William",
+      "email": "w@ws.com",
+      "passwordHash": "$2a$10$lzSwU2gNnglO.lnbGNvxkuXSqSZEBOZ7CwFJZe/rccW5xE6OYl3uu",
+      "createdAt": "2026-04-15T03:19:28.299Z"
+    }
+  ],
+  "records": []
+}

@@ -5,6 +5,7 @@ This project is prepared for Vercel with:
 - a static Vite frontend build from `frontend/`
 - a serverless API handler at `api/index.js`
 - same-origin frontend API calls through `/api`
+- optional Postgres storage through Supabase using `DATABASE_URL`
 
 ## Vercel deployment
 
@@ -12,14 +13,33 @@ Set these environment variables in Vercel:
 
 - `JWT_SECRET`
 - `CLIENT_ORIGIN`
+- `DATABASE_URL`
+- `STORAGE_DRIVER`
 
 Recommended `CLIENT_ORIGIN` value:
 
 - your production URL, for example `https://your-project.vercel.app`
 
+## Supabase storage
+
+1. Create a Supabase project.
+2. In the SQL editor, run [`supabase/schema.sql`](./supabase/schema.sql).
+3. Copy the Supabase Postgres connection string into `DATABASE_URL`.
+4. Set `STORAGE_DRIVER=postgres`.
+5. Migrate any existing JSON seed data with:
+
+```bash
+npm --prefix backend run migrate:json-to-postgres
+```
+
+For local JSON-only development, keep:
+
+- `STORAGE_DRIVER=json`
+- `PGSSLMODE=disable`
+
 ## Important storage note
 
-The backend currently stores users and records in a JSON file. On Vercel, write access is only temporary, so the app now falls back to `/tmp/web-spreadsheet-data.json` during serverless execution.
+If you stay on JSON storage, Vercel write access is only temporary, so the app falls back to `/tmp/web-spreadsheet-data.json` during serverless execution.
 
 That means:
 

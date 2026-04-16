@@ -1,6 +1,12 @@
 const crypto = require('crypto');
 
-const { readDb, writeDb } = require('../db/database');
+const {
+  createRecord: insertRecord,
+  deleteRecord: removeRecord,
+  findRecordById,
+  listRecordsByUserId,
+  updateRecord: persistRecord
+} = require('../db/database');
 const { requireFields, createError } = require('../utils/validator');
 
 function normalizeRecord(record) {
@@ -22,9 +28,8 @@ function normalizeRecord(record) {
 }
 
 async function listRecords(userId) {
-  const db = await readDb();
-  return db.records
-    .filter((record) => record.userId === userId)
+  const records = await listRecordsByUserId(userId);
+  return records
     .map(normalizeRecord)
     .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
 }
@@ -41,7 +46,6 @@ async function createRecord(userId, payload) {
     'status'
   ]);
 
-  const db = await readDb();
   const record = {
     id: crypto.randomUUID(),
     userId,
@@ -66,9 +70,8 @@ async function createRecord(userId, payload) {
     throw createError(400, 'pH, dissolved oxygen, and temperature must be valid numbers.');
   }
 
-  db.records.push(record);
-  await writeDb(db);
-  return record;
+  const createdRecord = await insertRecord(record);
+  return normalizeRecord(createdRecord);
 }
 
 async function updateRecord(userId, recordId, payload) {
@@ -83,10 +86,7 @@ async function updateRecord(userId, recordId, payload) {
     'status'
   ]);
 
-  const db = await readDb();
-  const record = db.records.find(
-    (entry) => entry.id === recordId && entry.userId === userId
-  );
+  const record = await findRecordById(userId, recordId);
 
   if (!record) {
     throw createError(404, 'Record not found.');
@@ -111,22 +111,16 @@ async function updateRecord(userId, recordId, payload) {
   record.notes = (payload.notes || '').trim();
   record.updatedAt = new Date().toISOString();
 
-  await writeDb(db);
-  return normalizeRecord(record);
+  const updatedRecord = await persistRecord(record);
+  return normalizeRecord(updatedRecord);
 }
 
 async function deleteRecord(userId, recordId) {
-  const db = await readDb();
-  const index = db.records.findIndex(
-    (entry) => entry.id === recordId && entry.userId === userId
-  );
+  const wasDeleted = await removeRecord(userId, recordId);
 
-  if (index === -1) {
+  if (!wasDeleted) {
     throw createError(404, 'Record not found.');
   }
-
-  db.records.splice(index, 1);
-  await writeDb(db);
 }
 
 module.exports = {

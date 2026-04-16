@@ -2,7 +2,7 @@ const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-const { readDb, writeDb } = require('../db/database');
+const { createUser, findUserByEmail } = require('../db/database');
 const { requireFields, normalizeEmail, createError } = require('../utils/validator');
 
 function buildAuthResponse(user) {
@@ -20,9 +20,8 @@ function buildAuthResponse(user) {
 async function register(payload) {
   requireFields(payload, ['name', 'email', 'password']);
 
-  const db = await readDb();
   const email = normalizeEmail(payload.email);
-  const existingUser = db.users.find((user) => user.email === email);
+  const existingUser = await findUserByEmail(email);
 
   if (existingUser) {
     throw createError(409, 'Email is already registered.');
@@ -37,18 +36,15 @@ async function register(payload) {
     createdAt: new Date().toISOString()
   };
 
-  db.users.push(user);
-  await writeDb(db);
-
-  return buildAuthResponse(user);
+  const createdUser = await createUser(user);
+  return buildAuthResponse(createdUser);
 }
 
 async function login(payload) {
   requireFields(payload, ['email', 'password']);
 
-  const db = await readDb();
   const email = normalizeEmail(payload.email);
-  const user = db.users.find((entry) => entry.email === email);
+  const user = await findUserByEmail(email);
 
   if (!user) {
     throw createError(401, 'Invalid email or password.');

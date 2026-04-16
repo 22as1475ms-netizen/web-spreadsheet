@@ -1060,6 +1060,7 @@ button {
   display: flex;
   align-items: stretch;
   min-width: 0;
+  min-height: 182px;
 }
 
 .commandbar__section {
@@ -1117,10 +1118,10 @@ button {
 
 .ribbon-section__body {
   display: grid;
-  gap: 6px;
+  gap: 5px;
   align-content: start;
   min-width: 0;
-  padding: 8px 12px 6px;
+  padding: 8px 10px 6px;
 }
 
 .ribbon-section__body--compact {
@@ -1691,8 +1692,8 @@ button {
 }
 
 .tool-btn--toolbar {
-  min-height: 34px;
-  padding: 6px 10px;
+  min-height: 32px;
+  padding: 5px 9px;
   font-size: 0.76rem;
 }
 
@@ -1827,6 +1828,12 @@ button {
   color: #ffffff;
 }
 
+.commandbar--ribbon .tool-btn--icononly {
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+}
+
 .commandbar--ribbon .swatch-group {
   min-width: 110px;
 }
@@ -1849,6 +1856,7 @@ button {
   display: flex;
   align-items: stretch;
   gap: 0;
+  min-height: 182px;
   padding: 0;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   background: linear-gradient(180deg, #344154 0%, #2d3949 100%);
@@ -1857,10 +1865,10 @@ button {
 .toolbar-settings__section {
   display: grid;
   align-content: start;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
   min-height: 100%;
-  padding: 10px 12px 8px;
+  padding: 9px 10px 8px;
   border-right: 1px solid rgba(255, 255, 255, 0.14);
   background: transparent;
 }
@@ -1874,7 +1882,7 @@ button {
 .toolbar-settings__colors {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
   align-items: flex-start;
 }
 
@@ -1899,6 +1907,20 @@ button {
 
 .commandbar--ribbon .toolbar-settings .alignment-btn {
   color: rgba(233, 241, 249, 0.74);
+}
+
+.commandbar--ribbon .toolbar-settings .alignment-btn--icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+}
+
+.commandbar--ribbon .toolbar-settings .alignment-btn--icon svg {
+  width: 15px;
+  height: 15px;
 }
 
 .commandbar--ribbon .toolbar-settings .alignment-btn--active {
@@ -2376,6 +2398,20 @@ button {
   padding: 6px 10px;
   font-size: 0.82rem;
   font-weight: 700;
+}
+
+.alignment-btn--icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+}
+
+.alignment-btn--icon svg {
+  width: 15px;
+  height: 15px;
 }
 
 .alignment-btn--active {

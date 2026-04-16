@@ -218,6 +218,54 @@ function ToolIcon({ name }) {
     );
   }
 
+  if (name === 'bold') {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M8 5h5a3.5 3.5 0 0 1 0 7H8zm0 7h6a3.5 3.5 0 0 1 0 7H8z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+
+  if (name === 'italic') {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M14 5h5M5 19h5M14 5 10 19" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+
+  if (name === 'underline') {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M7 5v6a5 5 0 0 0 10 0V5M6 19h12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+
+  if (name === 'align-left') {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M5 6h14M5 10h10M5 14h14M5 18h10" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  if (name === 'align-center') {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M5 6h14M7 10h10M5 14h14M7 18h10" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  if (name === 'align-right') {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M5 6h14M9 10h10M5 14h14M9 18h10" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
   return null;
 }
 
@@ -1934,33 +1982,6 @@ export default function Dashboard({ activeFile, onBackToFiles, onSaveFile, sessi
     }), `Row alignment set to ${alignment}.`);
   }
 
-  function handleSetRowColor(color) {
-    if (alignmentTargetIds.length === 0) {
-      notify('Select a row first to change its highlight color.', 'error');
-      return;
-    }
-
-    updateActiveSheet((sheet) => ({
-      ...sheet,
-      rowMeta: {
-        ...sheet.rowMeta,
-        ...Object.fromEntries(
-          alignmentTargetIds.map((rowId) => [
-            rowId,
-            {
-              ...(sheet.rowMeta[rowId] || {
-                kind: 'row',
-                color: defaultRowColor,
-                alignment: 'left'
-              }),
-              color
-            }
-          ])
-        )
-      }
-    }), 'Row highlight updated.');
-  }
-
   function handleDeleteColumn(column) {
     openConfirmDialog({
       tone: 'danger',
@@ -2584,98 +2605,6 @@ export default function Dashboard({ activeFile, onBackToFiles, onSaveFile, sessi
             {activeToolbarView === 'main' ? (
             <>
             <div className="ribbon-panels">
-            <section className="ribbon-section ribbon-section--font">
-              <div className="ribbon-section__body">
-                <div className="ribbon-stack">
-                  <label className="toolbar-field toolbar-field--compact">
-                    <span>Font</span>
-                    <select
-                      value={activeCellStyle.fontFamily || ''}
-                      disabled={!activeCell}
-                      onChange={(event) => handleApplyCellStyle({ fontFamily: event.target.value })}
-                    >
-                      {fontFamilyOptions.map((option) => (
-                        <option key={option.label} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="toolbar-field toolbar-field--compact toolbar-field--narrow">
-                    <span>Size</span>
-                    <select
-                      value={activeCellStyle.fontSize || '14px'}
-                      disabled={!activeCell}
-                      onChange={(event) => handleApplyCellStyle({ fontSize: event.target.value })}
-                    >
-                      <option value="12px">12</option>
-                      <option value="14px">14</option>
-                      <option value="16px">16</option>
-                      <option value="18px">18</option>
-                      <option value="20px">20</option>
-                    </select>
-                  </label>
-                </div>
-                <div className="ribbon-stack ribbon-stack--tight">
-                  <div className="ribbon-inline">
-                    <button
-                      className={`tool-btn tool-btn--toolbar ${activeCellStyle.fontWeight === '700' ? 'tool-btn--active' : ''}`}
-                      type="button"
-                      disabled={!activeCell}
-                      aria-label="Bold"
-                      title="Bold"
-                      onClick={() => handleApplyCellStyle({
-                        fontWeight: activeCellStyle.fontWeight === '700' ? '' : '700'
-                      })}
-                    >
-                      <span className="tool-btn__icon">B</span>
-                    </button>
-                    <button
-                      className={`tool-btn tool-btn--toolbar ${activeCellStyle.fontStyle === 'italic' ? 'tool-btn--active' : ''}`}
-                      type="button"
-                      disabled={!activeCell}
-                      aria-label="Italic"
-                      title="Italic"
-                      onClick={() => handleApplyCellStyle({
-                        fontStyle: activeCellStyle.fontStyle === 'italic' ? '' : 'italic'
-                      })}
-                    >
-                      <span className="tool-btn__icon">I</span>
-                    </button>
-                    <button
-                      className={`tool-btn tool-btn--toolbar ${activeCellStyle.textDecoration === 'underline' ? 'tool-btn--active' : ''}`}
-                      type="button"
-                      disabled={!activeCell}
-                      aria-label="Underline"
-                      title="Underline"
-                      onClick={() => handleApplyCellStyle({
-                        textDecoration: activeCellStyle.textDecoration === 'underline' ? '' : 'underline'
-                      })}
-                    >
-                      <span className="tool-btn__icon">U</span>
-                    </button>
-                  </div>
-                  <div className="ribbon-inline">
-                    <ColorSwatchGroup
-                      label="Fill"
-                      value={activeCellStyle.backgroundColor || '#ffffff'}
-                      colors={colorSwatches.slice(0, 6)}
-                      disabled={!activeCell}
-                      onChange={(color) => handleApplyCellStyle({ backgroundColor: color })}
-                    />
-                    <ColorSwatchGroup
-                      label="Text"
-                      value={activeCellStyle.color || '#264564'}
-                      colors={textColorSwatches.slice(0, 6)}
-                      disabled={!activeCell}
-                      onChange={(color) => handleApplyCellStyle({ color })}
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className="ribbon-section__foot">Font</div>
-            </section>
-
             <section className="ribbon-section ribbon-section--cells">
               <div className="ribbon-section__body">
                 <button className="tool-btn tool-btn--toolbar" type="button" disabled={!activeCell && !selectedRange} onClick={handleDeleteSelectedColumns} title="Delete selected columns">
@@ -2795,37 +2724,122 @@ export default function Dashboard({ activeFile, onBackToFiles, onSaveFile, sessi
 
               <div className="toolbar-settings__section">
                 <span className="commandbar__label">Formatting</span>
+                <div className="toolbar-settings__fields">
+                  <label className="toolbar-field toolbar-field--compact">
+                    <span>Font</span>
+                    <select
+                      value={activeCellStyle.fontFamily || ''}
+                      disabled={!activeCell}
+                      onChange={(event) => handleApplyCellStyle({ fontFamily: event.target.value })}
+                    >
+                      {fontFamilyOptions.map((option) => (
+                        <option key={option.label} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="toolbar-field toolbar-field--compact toolbar-field--narrow">
+                    <span>Size</span>
+                    <select
+                      value={activeCellStyle.fontSize || '14px'}
+                      disabled={!activeCell}
+                      onChange={(event) => handleApplyCellStyle({ fontSize: event.target.value })}
+                    >
+                      <option value="12px">12</option>
+                      <option value="14px">14</option>
+                      <option value="16px">16</option>
+                      <option value="18px">18</option>
+                      <option value="20px">20</option>
+                    </select>
+                  </label>
+                </div>
+                <div className="toolbar-settings__actions">
+                  <button
+                    className={`tool-btn tool-btn--toolbar tool-btn--icononly ${activeCellStyle.fontWeight === '700' ? 'tool-btn--active' : ''}`}
+                    type="button"
+                    disabled={!activeCell}
+                    aria-label="Bold"
+                    title="Bold"
+                    onClick={() => handleApplyCellStyle({
+                      fontWeight: activeCellStyle.fontWeight === '700' ? '' : '700'
+                    })}
+                  >
+                    <span className="tool-btn__icon"><ToolIcon name="bold" /></span>
+                  </button>
+                  <button
+                    className={`tool-btn tool-btn--toolbar tool-btn--icononly ${activeCellStyle.fontStyle === 'italic' ? 'tool-btn--active' : ''}`}
+                    type="button"
+                    disabled={!activeCell}
+                    aria-label="Italic"
+                    title="Italic"
+                    onClick={() => handleApplyCellStyle({
+                      fontStyle: activeCellStyle.fontStyle === 'italic' ? '' : 'italic'
+                    })}
+                  >
+                    <span className="tool-btn__icon"><ToolIcon name="italic" /></span>
+                  </button>
+                  <button
+                    className={`tool-btn tool-btn--toolbar tool-btn--icononly ${activeCellStyle.textDecoration === 'underline' ? 'tool-btn--active' : ''}`}
+                    type="button"
+                    disabled={!activeCell}
+                    aria-label="Underline"
+                    title="Underline"
+                    onClick={() => handleApplyCellStyle({
+                      textDecoration: activeCellStyle.textDecoration === 'underline' ? '' : 'underline'
+                    })}
+                  >
+                    <span className="tool-btn__icon"><ToolIcon name="underline" /></span>
+                  </button>
+                </div>
                 <div className="alignment-toolbar" role="toolbar" aria-label="Text alignment">
                   <span className="alignment-toolbar__label">Align</span>
                   {rowAlignmentOptions.map((option) => (
                     <button
                       key={option.value}
-                      className={`alignment-btn ${currentAlignment === option.value ? 'alignment-btn--active' : ''}`}
+                      className={`alignment-btn alignment-btn--icon ${currentAlignment === option.value ? 'alignment-btn--active' : ''}`}
                       type="button"
                       disabled={alignmentTargetIds.length === 0}
                       onClick={() => handleSetRowAlignment(option.value)}
                       aria-pressed={currentAlignment === option.value}
+                      aria-label={`Align ${option.label}`}
+                      title={`Align ${option.label}`}
                     >
-                      {option.label}
+                      <ToolIcon
+                        name={
+                          option.value === 'left'
+                            ? 'align-left'
+                            : option.value === 'center'
+                              ? 'align-center'
+                              : 'align-right'
+                        }
+                      />
                     </button>
                   ))}
                 </div>
-                <ColorSwatchGroup
-                  label="Row Color"
-                  value={currentAlignment && alignmentTargetIds.length > 0
-                    ? rowMeta[alignmentTargetIds[0]]?.color || defaultRowColor
-                    : defaultRowColor}
-                  colors={colorSwatches}
-                  disabled={alignmentTargetIds.length === 0}
-                  onChange={handleSetRowColor}
-                />
-                <ColorSwatchGroup
-                  label="Column Color"
-                  value={currentColumnColor}
-                  colors={colorSwatches}
-                  disabled={selectedColumnIds.length === 0}
-                  onChange={handleSetColumnColor}
-                />
+                <div className="toolbar-settings__colors">
+                  <ColorSwatchGroup
+                    label="Fill Cell"
+                    value={activeCellStyle.backgroundColor || '#ffffff'}
+                    colors={colorSwatches.slice(0, 6)}
+                    disabled={!activeCell}
+                    onChange={(color) => handleApplyCellStyle({ backgroundColor: color })}
+                  />
+                  <ColorSwatchGroup
+                    label="Text"
+                    value={activeCellStyle.color || '#264564'}
+                    colors={textColorSwatches.slice(0, 6)}
+                    disabled={!activeCell}
+                    onChange={(color) => handleApplyCellStyle({ color })}
+                  />
+                  <ColorSwatchGroup
+                    label="Column"
+                    value={currentColumnColor}
+                    colors={colorSwatches.slice(0, 6)}
+                    disabled={selectedColumnIds.length === 0}
+                    onChange={handleSetColumnColor}
+                  />
+                </div>
               </div>
 
               <div className="toolbar-settings__section">
@@ -2901,41 +2915,6 @@ export default function Dashboard({ activeFile, onBackToFiles, onSaveFile, sessi
                 <span className="tool-btn__icon">+</span>
                 <span>Add Row</span>
               </button>
-            </div>
-            <div className="sheet-grid-builder__group">
-              <div className="alignment-toolbar" role="toolbar" aria-label="Text alignment">
-                <span className="alignment-toolbar__label">Text Align</span>
-                {rowAlignmentOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    className={`alignment-btn ${currentAlignment === option.value ? 'alignment-btn--active' : ''}`}
-                    type="button"
-                    disabled={alignmentTargetIds.length === 0}
-                    onClick={() => handleSetRowAlignment(option.value)}
-                    aria-pressed={currentAlignment === option.value}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-              <label className="toolbar-field toolbar-field--compact toolbar-field--inline">
-                <span>Row Color</span>
-                <input
-                  type="color"
-                  value={currentAlignment && alignmentTargetIds.length > 0
-                    ? rowMeta[alignmentTargetIds[0]]?.color || defaultRowColor
-                    : defaultRowColor}
-                  disabled={alignmentTargetIds.length === 0}
-                  onInput={(event) => handleSetRowColor(event.target.value)} />
-              </label>
-              <label className="toolbar-field toolbar-field--compact toolbar-field--inline">
-                <span>Column Color</span>
-                <input
-                  type="color"
-                  value={currentColumnColor}
-                  disabled={selectedColumnIds.length === 0}
-                  onInput={(event) => handleSetColumnColor(event.target.value)} />
-              </label>
             </div>
             <div className="sheet-grid-builder__group sheet-grid-builder__group--column">
               <div className="sheet-grid-builder__hint">

@@ -298,6 +298,7 @@ function createSheet(name) {
     frozenRows: [],
     hiddenColumns: [],
     columnTypes: {},
+    columnStyles: {},
     columnWidths: {},
     rowHeights: {},
     cellStyles: {},
@@ -333,6 +334,7 @@ function cloneSheet(sheet, copyCount) {
     frozenRows: (sheet.frozenRows || []).map((rowId) => idMap.get(rowId)).filter(Boolean),
     hiddenColumns: [...sheet.hiddenColumns],
     columnTypes: { ...sheet.columnTypes },
+    columnStyles: { ...(sheet.columnStyles || {}) },
     columnWidths: { ...(sheet.columnWidths || {}) },
     rowHeights: { ...(sheet.rowHeights || {}) },
     cellStyles: { ...(sheet.cellStyles || {}) },
@@ -364,6 +366,7 @@ function normalizeSheet(sheet, index) {
     frozenRows: Array.isArray(sheet.frozenRows) ? sheet.frozenRows : [],
     hiddenColumns: Array.isArray(sheet.hiddenColumns) ? sheet.hiddenColumns : [],
     columnTypes: sheet.columnTypes && typeof sheet.columnTypes === 'object' ? sheet.columnTypes : {},
+    columnStyles: sheet.columnStyles && typeof sheet.columnStyles === 'object' ? sheet.columnStyles : {},
     columnWidths: sheet.columnWidths && typeof sheet.columnWidths === 'object' ? sheet.columnWidths : {},
     rowHeights: sheet.rowHeights && typeof sheet.rowHeights === 'object' ? sheet.rowHeights : {},
     cellStyles: sheet.cellStyles && typeof sheet.cellStyles === 'object' ? sheet.cellStyles : {},
@@ -386,6 +389,7 @@ function getInitialSheets(file) {
         frozenRows: file.frozenRows || [],
         hiddenColumns: file.hiddenColumns || [],
         columnTypes: file.columnTypes || {},
+        columnStyles: file.columnStyles || {},
         columnWidths: file.columnWidths || {},
         rowHeights: file.rowHeights || {},
         cellStyles: file.cellStyles || {},
@@ -597,6 +601,7 @@ export default function Dashboard({ activeFile, onBackToFiles, onSaveFile, sessi
   const frozenRows = activeSheet.frozenRows || [];
   const hiddenColumns = activeSheet.hiddenColumns || [];
   const columnTypes = activeSheet.columnTypes || {};
+  const columnStyles = activeSheet.columnStyles || {};
   const columnWidths = activeSheet.columnWidths || {};
   const rowHeights = activeSheet.rowHeights || {};
   const cellStyles = activeSheet.cellStyles || {};
@@ -698,6 +703,24 @@ export default function Dashboard({ activeFile, onBackToFiles, onSaveFile, sessi
     : alignmentTargetIds.length === 1
       ? rowMeta[alignmentTargetIds[0]]?.alignment || 'left'
       : null;
+
+  const selectedColumnIds = useMemo(() => {
+    const normalizedRange = normalizeRange(selectedRange);
+
+    if (normalizedRange) {
+      return visibleColumns.slice(normalizedRange.columnStart, normalizedRange.columnEnd + 1);
+    }
+
+    if (activeCell?.column && activeCell.column !== rowLabelField) {
+      return [activeCell.column];
+    }
+
+    return [];
+  }, [activeCell, selectedRange, visibleColumns]);
+
+  const currentColumnColor = selectedColumnIds.length > 0
+    ? columnStyles[selectedColumnIds[0]]?.backgroundColor || '#ffffff'
+    : '#ffffff';
 
   const activeCellRecord = activeCell
     ? records.find((record) => record.id === activeCell.recordId) || null
@@ -1046,6 +1069,7 @@ export default function Dashboard({ activeFile, onBackToFiles, onSaveFile, sessi
       frozenRows: nextActiveSheet.frozenRows,
       hiddenColumns: nextActiveSheet.hiddenColumns,
       columnTypes: nextActiveSheet.columnTypes,
+      columnStyles: nextActiveSheet.columnStyles,
       columnWidths: nextActiveSheet.columnWidths,
       rowHeights: nextActiveSheet.rowHeights,
       cellStyles: nextActiveSheet.cellStyles,
@@ -1640,6 +1664,41 @@ export default function Dashboard({ activeFile, onBackToFiles, onSaveFile, sessi
     }, '');
   }
 
+  function handleSetColumnColor(color) {
+    if (selectedColumnIds.length === 0) {
+      notify('Select a cell in the target column first before applying column color.', 'error');
+      return;
+    }
+
+    updateActiveSheet((sheet) => {
+      const nextColumnStyles = {
+        ...(sheet.columnStyles || {})
+      };
+
+      selectedColumnIds.forEach((column) => {
+        const nextStyle = {
+          ...(nextColumnStyles[column] || {}),
+          backgroundColor: color
+        };
+
+        if (!nextStyle.backgroundColor || nextStyle.backgroundColor === '#ffffff') {
+          delete nextStyle.backgroundColor;
+        }
+
+        if (Object.keys(nextStyle).length === 0) {
+          delete nextColumnStyles[column];
+        } else {
+          nextColumnStyles[column] = nextStyle;
+        }
+      });
+
+      return {
+        ...sheet,
+        columnStyles: nextColumnStyles
+      };
+    }, 'Column highlight updated.');
+  }
+
   function handleMergeSelectedCells() {
     const normalizedRange = normalizeRange(selectedRange);
 
@@ -1917,8 +1976,10 @@ export default function Dashboard({ activeFile, onBackToFiles, onSaveFile, sessi
           });
 
           const nextColumnTypes = { ...(sheet.columnTypes || {}) };
+          const nextColumnStyles = { ...(sheet.columnStyles || {}) };
           const nextColumnWidths = { ...(sheet.columnWidths || {}) };
           delete nextColumnTypes[column];
+          delete nextColumnStyles[column];
           delete nextColumnWidths[column];
 
           const nextCellStyles = Object.fromEntries(
@@ -1930,6 +1991,7 @@ export default function Dashboard({ activeFile, onBackToFiles, onSaveFile, sessi
             records: nextRecords,
             hiddenColumns: (sheet.hiddenColumns || []).filter((currentColumn) => currentColumn !== column),
             columnTypes: nextColumnTypes,
+            columnStyles: nextColumnStyles,
             columnWidths: nextColumnWidths,
             cellStyles: nextCellStyles,
             merges: (sheet.merges || []).filter(
@@ -2757,6 +2819,13 @@ export default function Dashboard({ activeFile, onBackToFiles, onSaveFile, sessi
                   disabled={alignmentTargetIds.length === 0}
                   onChange={handleSetRowColor}
                 />
+                <ColorSwatchGroup
+                  label="Column Color"
+                  value={currentColumnColor}
+                  colors={colorSwatches}
+                  disabled={selectedColumnIds.length === 0}
+                  onChange={handleSetColumnColor}
+                />
               </div>
 
               <div className="toolbar-settings__section">
@@ -2859,6 +2928,14 @@ export default function Dashboard({ activeFile, onBackToFiles, onSaveFile, sessi
                   disabled={alignmentTargetIds.length === 0}
                   onInput={(event) => handleSetRowColor(event.target.value)} />
               </label>
+              <label className="toolbar-field toolbar-field--compact toolbar-field--inline">
+                <span>Column Color</span>
+                <input
+                  type="color"
+                  value={currentColumnColor}
+                  disabled={selectedColumnIds.length === 0}
+                  onInput={(event) => handleSetColumnColor(event.target.value)} />
+              </label>
             </div>
             <div className="sheet-grid-builder__group sheet-grid-builder__group--column">
               <div className="sheet-grid-builder__hint">
@@ -2909,6 +2986,7 @@ export default function Dashboard({ activeFile, onBackToFiles, onSaveFile, sessi
           <RecordTable
             activeCell={activeCell}
             columnTypes={columnTypes}
+            columnStyles={columnStyles}
             columns={visibleColumns}
             columnWidths={columnWidths}
             dragDisabled={dragDisabled}

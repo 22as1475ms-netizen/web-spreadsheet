@@ -4,6 +4,10 @@ function getInputType(column, columnTypes) {
   return columnTypes[column] || 'text';
 }
 
+function getColumnStyle(columnStyles, column) {
+  return columnStyles?.[column] || {};
+}
+
 function getColumnHolder(index) {
   let value = index;
   let label = '';
@@ -103,6 +107,7 @@ function getVisibleMergeForCell(recordId, column, merges, records, columns) {
 export default function RecordTable({
   activeCell,
   columnTypes,
+  columnStyles,
   columns,
   columnWidths,
   dragDisabled,
@@ -269,7 +274,11 @@ export default function RecordTable({
               {columns.map((column, columnIndex) => (
                 <th
                   key={column}
-                  style={{ width: `${columnWidths?.[column] || 160}px`, minWidth: `${columnWidths?.[column] || 160}px` }}
+                  style={{
+                    width: `${columnWidths?.[column] || 160}px`,
+                    minWidth: `${columnWidths?.[column] || 160}px`,
+                    background: getColumnStyle(columnStyles, column).backgroundColor || undefined
+                  }}
                 >
                   <div className="sheet-column sheet-column--header">
                     <div className="sheet-column__meta">
@@ -472,6 +481,10 @@ export default function RecordTable({
                   </td>
                   {columns.map((column, columnIndex) => {
                     const mergeInfo = getVisibleMergeForCell(record.id, column, merges, records, columns);
+                    const resolvedCellStyle = {
+                      ...getColumnStyle(columnStyles, column),
+                      ...getCellStyle(record.id, column)
+                    };
 
                     if (mergeInfo && !mergeInfo.isAnchor) {
                       return null;
@@ -504,6 +517,7 @@ export default function RecordTable({
                                 .slice(columnIndex, columnIndex + (mergeInfo?.colSpan || 1))
                                 .reduce((sum, currentColumn) => sum + (columnWidths?.[currentColumn] || 160), 0)
                             : (columnWidths?.[column] || 160)}px`,
+                          background: resolvedCellStyle.backgroundColor || undefined,
                           ...frozenCellStyle
                         }}
                         {...mouseHandlers}
@@ -518,7 +532,7 @@ export default function RecordTable({
                           }}
                           onKeyDown={(event) => handleCellKeyDown(event, record.id, column)}
                           onPaste={(event) => handleCellPasteEvent(event, record.id, column)}
-                          style={getCellStyle(record.id, column)}
+                          style={resolvedCellStyle}
                           onChange={(event) => onCellChange(record.id, column, event.target.value)}
                         />
                       </td>

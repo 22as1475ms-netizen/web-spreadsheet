@@ -393,6 +393,7 @@ function buildDirectSheetFromMatrix(name, matrix, worksheet, index) {
     frozenRows: [],
     hiddenColumns,
     columnTypes: Object.fromEntries(columns.map((column) => [column, 'text'])),
+    columnStyles: {},
     columnWidths: {},
     rowHeights: {},
     cellStyles: {},
@@ -420,6 +421,9 @@ function buildSheetFromMatrix(name, matrix, worksheet, metadata, index) {
   const metaForSheet = metadata?.sheets?.find((sheet) => sheet.name === sanitizedName);
   const rowMeta = metaForSheet?.rowMeta && typeof metaForSheet.rowMeta === 'object' ? metaForSheet.rowMeta : {};
   const cellStyles = metaForSheet?.cellStyles && typeof metaForSheet.cellStyles === 'object' ? metaForSheet.cellStyles : {};
+  const columnStyles = metaForSheet?.columnStyles && typeof metaForSheet.columnStyles === 'object'
+    ? metaForSheet.columnStyles
+    : {};
 
   const records = dataRows
     .filter((row) => row.some((cell) => String(cell ?? '').trim() !== ''))
@@ -516,6 +520,7 @@ function buildSheetFromMatrix(name, matrix, worksheet, metadata, index) {
       ? metaForSheet.hiddenColumns.filter((column) => nextColumnTypes[column])
       : [],
     columnTypes: nextColumnTypes,
+    columnStyles,
     columnWidths: metaForSheet?.columnWidths && typeof metaForSheet.columnWidths === 'object' ? metaForSheet.columnWidths : {},
     rowHeights: metaForSheet?.rowHeights && typeof metaForSheet.rowHeights === 'object'
       ? Object.fromEntries(
@@ -560,6 +565,7 @@ export function createImportFileFromJson(payload, fileName) {
             frozenRows: Array.isArray(payload.frozenRows) ? payload.frozenRows : [],
             hiddenColumns: Array.isArray(payload.hiddenColumns) ? payload.hiddenColumns : [],
             columnTypes: payload.columnTypes && typeof payload.columnTypes === 'object' ? payload.columnTypes : {},
+            columnStyles: payload.columnStyles && typeof payload.columnStyles === 'object' ? payload.columnStyles : {},
             merges: Array.isArray(payload.merges) ? payload.merges : [],
             rowMeta: payload.rowMeta && typeof payload.rowMeta === 'object' ? payload.rowMeta : {}
           }
@@ -578,6 +584,7 @@ export function createImportFileFromJson(payload, fileName) {
     frozenRows: sheets[0]?.frozenRows || [],
     hiddenColumns: sheets[0]?.hiddenColumns || [],
     columnTypes: sheets[0]?.columnTypes || {},
+    columnStyles: sheets[0]?.columnStyles || {},
     merges: sheets[0]?.merges || [],
     rowMeta: sheets[0]?.rowMeta || {},
     createdAt: payload.createdAt || new Date().toISOString(),
@@ -623,6 +630,7 @@ export async function createImportFileFromWorkbook(file) {
     frozenRows: sheets[0].frozenRows,
     hiddenColumns: sheets[0].hiddenColumns,
     columnTypes: sheets[0].columnTypes,
+    columnStyles: sheets[0].columnStyles || {},
     merges: sheets[0].merges,
     rowMeta: sheets[0].rowMeta,
     createdAt: new Date().toISOString(),
@@ -721,6 +729,7 @@ export function exportWorkbookAsXlsx({ name, sheets }) {
       frozenRows: Array.isArray(sheet.frozenRows) ? sheet.frozenRows : [],
       hiddenColumns: Array.isArray(sheet.hiddenColumns) ? sheet.hiddenColumns : [],
       columnTypes: sheet.columnTypes || {},
+      columnStyles: sheet.columnStyles || {},
       columnWidths: sheet.columnWidths || {},
       rowHeights: sheet.rowHeights || {},
       cellStyles: sheet.cellStyles || {},
